@@ -1,0 +1,17 @@
+{
+  "name": "cache-timer",
+  "version": "0.4.0",
+  "description": "Live, color-coded countdown of the prompt cache TTL under the prompt",
+  "author": { "name": "andromma" },
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "ttl": {
+      "type": "string",
+      "title": "Prompt cache TTL",
+      "description": "How long the prompt cache lives after its last read or write",
+      "options": ["1h", "5m"],
+      "default": "1h"
+    }
+  }
+}
