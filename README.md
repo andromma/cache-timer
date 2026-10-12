@@ -31,6 +31,9 @@ in a running session.
   restarts it.
 - Requests that neither read nor write the cache leave the countdown as it was.
   Subagent requests are ignored, as they cache their own prefix.
+- A request that fails leaves the countdown as it was, since it may not have
+  touched the cache. If the very first request fails there is nothing to go
+  back to, so it shows as cold.
 - The timer stops once the cache goes cold and starts again with the next
   request, so nothing runs while the session sits idle.
 - The mod makes no model calls and adds nothing to what is sent to the model.
