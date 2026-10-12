@@ -72,7 +72,17 @@ export const register: Register = (on, options) => {
     startTicking($, ttlMs)
     await paint($, ttlMs)
 
-    const result = yield* next(e)
+    let result
+    try {
+      result = yield* next(e)
+    } catch (error) {
+      // A failed request may not have touched the cache, so don't claim the
+      // countdown restarted; the previous entry's clock still stands.
+      // With no earlier entry there is nothing to restore, so show it as cold.
+      await $.state.set(LAST_HIT, before ?? { ...sent, at: sent.at - ttlMs })
+      await paint($, ttlMs)
+      throw error
+    }
     const usage = result.usage
     const cached = usage === null ? 0 : usage.cache_read_input_tokens + usage.cache_creation_input_tokens
 

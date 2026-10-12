@@ -80,11 +80,12 @@ const usage = (cached: number): Usage => ({
 
 // Mounts the hint with a stubbed model whose responses report `cached` tokens;
 // `cached` can be changed between steps.
-async function setup($: any, on: any, cached: { value: number }) {
+async function setup($: any, on: any, cached: { value: number }, fail = { value: false }) {
   const clock = mock.clock(on, { now: 1_000_000 })
   on('session.start', (_$: any, e: any) => ({ cwd: e.cwd }))
   on('ui.status', () => ({ value: undefined }))
   on('turn.step', async function* (_$: any, e: any) {
+    if (fail.value) throw new Error('request failed')
     return {
       turnId: e.turnId,
       index: e.index,
@@ -157,4 +158,26 @@ test('a request that reads the cache restarts the countdown and updates the size
   await step('t2')
 
   expect(await ui.find({ type: 'Text', text: /cache 60m · opus · 182k/ })).toBeDefined()
+})
+
+test('a failed request leaves the countdown as it was', async ($, on) => {
+  const fail = { value: false }
+  const { clock, step, ui } = await setup($, on, { value: 1000 }, fail)
+
+  await step('t1')
+  await clock.advance(30 * 60_000)
+
+  fail.value = true
+  await step('t2').catch(() => {})
+
+  expect((await ui.find({ type: 'Text', text: /cache 30m · opus · 1k/ }))?.props.color).toBe('success')
+})
+
+test('a failed first request shows the cache as cold', async ($, on) => {
+  const fail = { value: true }
+  const { step, ui } = await setup($, on, { value: 1000 }, fail)
+
+  await step('t1').catch(() => {})
+
+  expect((await ui.find({ type: 'Text', text: /cache cold · opus/ }))?.props.color).toBe('inactive')
 })
